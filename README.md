@@ -2,11 +2,11 @@
 
 [image1]: https://user-images.githubusercontent.com/10624937/42135619-d90f2f28-7d12-11e8-8823-82b970a54d7e.gif "Trained Agent"
 
-# Project 1: Navigation
+# Project 2: Continuous Control
 
 ### Introduction
 
-This project, you will train an agent to navigate (and collect bananas!) in a large, square world.  
+This project, you will train an agent ............  
 
 ![Trained Agent][image1]
 
@@ -42,21 +42,19 @@ Install CUDA Kit [here, and note the version to be 11.0 ](https://docs.nvidia.co
 	on your menu on windows , select "Anaconda3" - and then "Anaconda Prompt" it will open a new command window then 
      (For another S.O. please refer  (https://docs.anaconda.com/anaconda/install/verify-install/) ):
 
-	write: conda create --name drlnd python=3.8 [enter]
+	conda create --name drlnd python=3.6
 
-	write: conda activate drlnd [enter]
+	conda activate drlnd
 
-	write: conda install -c anaconda ipykernel [enter]
+	conda install -c anaconda ipykernel
 	
-	write: python -m ipykernel install --user --name drlnd --display-name "drlnd" [enter]
+	python -m ipykernel install --user --name drlnd --display-name "drlnd"
 
-	write: pip install mlagents [enter]
+	pip install mlagents
 
-	write: pip install unityagents --user [enter]
+	pip install unityagents --user
 
-	write: conda install pytorch -c pytorch [enter]
-
-	write: pip install torchvision===0.8.2 -f https://download.pytorch.org/whl/torch_stable.html [enter]
+	pip install torchvision===0.8.2 -f https://download.pytorch.org/whl/torch_stable.html
 
 
 4.- Download the github project (git clone https://github.com/pelsan/p1_navigation.git) and open Navigation.ipynb on Jupyter
