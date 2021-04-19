@@ -9,13 +9,16 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
-BUFFER_SIZE = int(1e5)  # replay buffer size
+BUFFER_SIZE = int(1e6)  # replay buffer size
 BATCH_SIZE = 128        # minibatch size
 GAMMA = 0.99            # discount factor
 TAU = 1e-3              # for soft update of target parameters
 LR_ACTOR = 1e-4         # learning rate of the actor 
-LR_CRITIC = 1e-3        # learning rate of the critic
-WEIGHT_DECAY = 0        # L2 weight decay
+LR_CRITIC = 3e-4        # learning rate of the critic
+WEIGHT_DECAY = 0.0001   # L2 weight decay
+
+
+PERCENT_GOOD_REWARD= 100
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -51,7 +54,7 @@ class Agent():
         # Replay memory
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, random_seed)
     
-    def step(self, state, action, reward, next_state, done):
+    def step2(self, state, action, reward, next_state, done):
         """Save experience in replay memory, and use random sample from buffer to learn."""
         # Save experience / reward
         self.memory.add(state, action, reward, next_state, done)
@@ -61,6 +64,24 @@ class Agent():
             experiences = self.memory.sample()
             self.learn(experiences, GAMMA)
 
+    def step(self, state, action, reward, next_state, done):
+        """Save experience in replay memory, and use random sample from buffer to learn."""
+        ## Save only rewards more that 0 
+        # Save experience / reward
+        
+        ranAdd = random.randrange(0, 1001)
+        #print ("reward is:"+str (reward) +"and random is = " +str (ranAdd))
+        if ( (reward > 0) or (ranAdd > PERCENT_GOOD_REWARD) ):
+            self.memory.add(state, action, reward, next_state, done)
+        #self.memory.add(state, action, reward, next_state, done)
+            #print("reward saved:" + str(reward) + " self memory = "+ str(len(self.memory)))
+        #print("Self Memory: "+ str(len(self.memory)))
+        # Learn, if enough samples are available in memory
+        if len(self.memory) > BATCH_SIZE:
+            #print("learning.....")
+            experiences = self.memory.sample()
+            self.learn(experiences, GAMMA)
+            
     def act(self, state, add_noise=True):
         """Returns actions for given state as per current policy."""
         state = torch.from_numpy(state).float().to(device)
