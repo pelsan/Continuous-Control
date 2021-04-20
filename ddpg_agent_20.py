@@ -3,14 +3,14 @@ import random
 import copy
 from collections import namedtuple, deque
 
-from model import Actor, Critic
+from model_20 import Actor, Critic
 
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
 BUFFER_SIZE = int(1e6)  # replay buffer size
-BATCH_SIZE = 128        # minibatch size
+BATCH_SIZE = 1024000        # minibatch size  original 128
 GAMMA = 0.99            # discount factor
 TAU = 1e-3              # for soft update of target parameters
 LR_ACTOR = 1e-4         # learning rate of the actor 
@@ -18,7 +18,7 @@ LR_CRITIC = 3e-4        # learning rate of the critic
 WEIGHT_DECAY = 0.0001   # L2 weight decay
 
 
-PERCENT_GOOD_REWARD= 500
+PERCENT_GOOD_REWARD= 999
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -54,7 +54,7 @@ class Agent():
         # Replay memory
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, random_seed)
     
-    def step2(self, state, action, reward, next_state, done):
+    def step(self, state, action, reward, next_state, done):
         """Save experience in replay memory, and use random sample from buffer to learn."""
         # Save experience / reward
         self.memory.add(state, action, reward, next_state, done)
@@ -62,9 +62,10 @@ class Agent():
         # Learn, if enough samples are available in memory
         if len(self.memory) > BATCH_SIZE:
             experiences = self.memory.sample()
+            print("learning.....")
             self.learn(experiences, GAMMA)
 
-    def step(self, state, action, reward, next_state, done):
+    def step2(self, state, action, reward, next_state, done):
         """Save experience in replay memory, and use random sample from buffer to learn."""
         ## Save only rewards more that 0 
         # Save experience / reward
@@ -78,7 +79,7 @@ class Agent():
         #print("Self Memory: "+ str(len(self.memory)))
         # Learn, if enough samples are available in memory
         if len(self.memory) > BATCH_SIZE:
-            #print("learning.....")
+            print("learning.....")
             experiences = self.memory.sample()
             self.learn(experiences, GAMMA)
             
@@ -91,6 +92,7 @@ class Agent():
         self.actor_local.train()
         if add_noise:
             action += self.noise.sample()
+
         return np.clip(action, -1, 1)
 
     def reset(self):
