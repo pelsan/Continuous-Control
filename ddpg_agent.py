@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import copy
+import statistics
 from collections import namedtuple, deque
 
 from model import Actor, Critic
@@ -9,23 +10,23 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
-BUFFER_SIZE = int(1e6)  # replay buffer size
+BUFFER_SIZE = int(1e5)  # replay buffer size
 BATCH_SIZE = 128        # minibatch size
 GAMMA = 0.99            # discount factor
 TAU = 1e-3              # for soft update of target parameters
 LR_ACTOR = 1e-4         # learning rate of the actor 
-LR_CRITIC = 3e-4        # learning rate of the critic
-WEIGHT_DECAY = 0.0001   # L2 weight decay
+LR_CRITIC = 2e-4        # learning rate of the critic
+WEIGHT_DECAY = 0        # L2 weight decay
 
-
-PERCENT_GOOD_REWARD= 500
+#PERCENT_GOOD_REWARD= 500
+#MAX_GOOD_REWARD = 1001
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Agent():
     """Interacts with and learns from the environment."""
     
-    def __init__(self, state_size, action_size, random_seed):
+    def __init__(self, state_size, action_size, random_seed, num_agents):
         """Initialize an Agent object.
         
         Params
@@ -33,10 +34,12 @@ class Agent():
             state_size (int): dimension of each state
             action_size (int): dimension of each action
             random_seed (int): random seed
+            num_agents (int): number of agents
         """
         self.state_size = state_size
         self.action_size = action_size
         self.seed = random.seed(random_seed)
+        self.num_agents = num_agents
 
         # Actor Network (w/ Target Network)
         self.actor_local = Actor(state_size, action_size, random_seed).to(device)
@@ -49,49 +52,38 @@ class Agent():
         self.critic_optimizer = optim.Adam(self.critic_local.parameters(), lr=LR_CRITIC, weight_decay=WEIGHT_DECAY)
 
         # Noise process
-        self.noise = OUNoise(action_size, random_seed)
+        #self.noise = OUNoise(action_size, random_seed)
+        self.noise = OUNoise((num_agents, action_size), random_seed)
 
         # Replay memory
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, random_seed)
-    
-    def step2(self, state, action, reward, next_state, done):
-        """Save experience in replay memory, and use random sample from buffer to learn."""
-        # Save experience / reward
-        self.memory.add(state, action, reward, next_state, done)
-
-        # Learn, if enough samples are available in memory
-        if len(self.memory) > BATCH_SIZE:
-            experiences = self.memory.sample()
-            self.learn(experiences, GAMMA)
 
     def step(self, state, action, reward, next_state, done):
         """Save experience in replay memory, and use random sample from buffer to learn."""
-        ## Save only rewards more that 0 
         # Save experience / reward
-        
-        ranAdd = random.randrange(0, 1001)
-        #print ("reward is:"+str (reward) +"and random is = " +str (ranAdd))
-        if ( (reward > 0) or (ranAdd > PERCENT_GOOD_REWARD) ):
-            self.memory.add(state, action, reward, next_state, done)
         #self.memory.add(state, action, reward, next_state, done)
-            #print("reward saved:" + str(reward) + " self memory = "+ str(len(self.memory)))
-        #print("Self Memory: "+ str(len(self.memory)))
-        # Learn, if enough samples are available in memory
+        for x in range(self.num_agents):
+            self.memory.add(state[x,:], action[x,:], reward[x], next_state[x,:], done[x])
+
+            # Learn, if enough samples are available in memory
         if len(self.memory) > BATCH_SIZE:
-            #print("learning.....")
             experiences = self.memory.sample()
             self.learn(experiences, GAMMA)
-            
+
     def act(self, state, add_noise=True):
         """Returns actions for given state as per current policy."""
         state = torch.from_numpy(state).float().to(device)
+        #-
+        actionX = np.zeros((self.num_agents, self.action_size))                       
         self.actor_local.eval()
         with torch.no_grad():
-            action = self.actor_local(state).cpu().data.numpy()
+            for agent, statex in enumerate(state):                                                                    
+                action = self.actor_local(statex).cpu().data.numpy()
+                actionX[agent, :] = action
         self.actor_local.train()
         if add_noise:
-            action += self.noise.sample()
-        return np.clip(action, -1, 1)
+            actionX += self.noise.sample()
+        return np.clip(actionX, -1, 1)
 
     def reset(self):
         self.noise.reset()
@@ -159,6 +151,7 @@ class OUNoise:
         self.theta = theta
         self.sigma = sigma
         self.seed = random.seed(seed)
+        self.size = size                
         self.reset()
 
     def reset(self):
@@ -168,7 +161,8 @@ class OUNoise:
     def sample(self):
         """Update internal state and return it as a noise sample."""
         x = self.state
-        dx = self.theta * (self.mu - x) + self.sigma * np.array([random.random() for i in range(len(x))])
+        #dx = self.theta * (self.mu - x) + self.sigma * np.array([random.random() for i in range(len(x))])
+        dx = self.theta * (self.mu - x) + self.sigma * np.random.standard_normal(self.size)
         self.state = x + dx
         return self.state
 
