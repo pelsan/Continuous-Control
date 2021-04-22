@@ -51,7 +51,7 @@ Install CUDA Kit [here, and note the version to be 11.0 ](https://docs.nvidia.co
 	pip install torchvision===0.8.2 -f https://download.pytorch.org/whl/torch_stable.html
 
 
-4.- Download the github project (git clone https://github.com/pelsan/Continuous-Control.git) and open Navigation.ipynb on Jupyter
+4.- Download the github project (git clone https://github.com/pelsan/Continuous-Control.git) and open Continuous_Control.ipynb on Jupyter
 
 
 5.- Download the environment from one of the links below.  You need only select the environment that matches your operating system:
